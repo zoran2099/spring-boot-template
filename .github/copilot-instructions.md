@@ -96,6 +96,28 @@ executions or test compilation will break.
 Auto-generated `HELP.md` at the repo root lists the Spring Boot 4.1.0 reference doc
 links for each included starter — consult it before searching the web for API details.
 
+## Dev Container
+
+The template ships with a full `.devcontainer/` setup (see **ADR-0009** and
+`.devcontainer/README.md`). Prefer running the build inside the devcontainer for
+reproducibility, especially behind the corporate Netskope proxy:
+
+```bash
+NODE_EXTRA_CA_CERTS=/etc/ssl/ca-bundle.pem devcontainer up --workspace-folder .
+NODE_EXTRA_CA_CERTS=/etc/ssl/ca-bundle.pem \
+  devcontainer exec --workspace-folder . ./mvnw -B -ntp clean verify
+```
+
+Toolchain inside the devcontainer:
+- Java 21.0.8 LTS (Microsoft OpenJDK).
+- Maven via `./mvnw` (wrapper — no system `mvn` needed).
+- **Docker-in-Docker**: Testcontainers uses an isolated Docker daemon inside the
+  container, so tests do not depend on the host's Docker daemon state
+  (Rancher off/on, Docker CE vs. Desktop, etc.).
+
+`.devcontainer/certs/` is `.gitignore`d — each dev populates local CAs following
+`.devcontainer/README.md`.
+
 ## Recommended Copilot CLI plugins
 
 This template expects the following plugins from the built-in `awesome-copilot`

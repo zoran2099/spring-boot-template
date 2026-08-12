@@ -243,15 +243,132 @@ Criada a estrutura `docs/` com:
 - `session-log.md` — este arquivo.
 - `reproducing.md` — passo a passo para recriar do zero.
 
+## 11. Validação em Dev Container (segunda rodada)
+
+Usuário solicitou repetir os testes dentro de um **Dev Container** — a
+validação anterior havia sido feita no host (openSUSE), o que expõe o
+template a variações de daemon Docker (usuário mencionou que Rancher
+Desktop estava desligado quando os primeiros testes rodaram, confirmando
+que era Docker CE nativo — daemon `28.5.1-ce` / OS `openSUSE Leap 15.6`).
+
+### 11.1 Instalação do CLI de devcontainer
+
+```
+npm install -g @devcontainers/cli
+→ devcontainer 0.88.0
+```
+
+### 11.2 Primeira tentativa: `devcontainer up`
+
+Erro:
+```
+Error fetching image details: self-signed certificate in certificate chain
+```
+
+Causa: o CLI Node.js não confia nas CAs corporativas ao falar com `ghcr.io`
+(registry das features). Workaround: `NODE_EXTRA_CA_CERTS=/etc/ssl/ca-bundle.pem`.
+
+### 11.3 Erro seguinte: certificado dentro do container
+
+Com `NODE_EXTRA_CA_CERTS` set, o build da imagem prossegue mas a feature
+`docker-in-docker` falha:
+
+```
+curl failed to verify the legitimacy of the server ...
+ERROR: Feature "Docker (Docker-in-Docker)" failed to install!
+```
+
+O container também precisa das CAs corporativas.
+
+### 11.4 Identificação da chain de MITM
+
+```
+docker run --rm mcr.microsoft.com/devcontainers/java:1-21-bookworm \
+  openssl s_client -connect packages.microsoft.com:443 -showcerts
+```
+
+Chain observada:
+- `CN=packages.microsoft.com` (server real)
+- `CN=ca.bbts.goskope.com` (intermediária Netskope customizada para BBTS)
+- `CN=certadmin, O=Netskope Inc.` (raiz Netskope)
+
+**Conclusão:** o proxy corporativo é **Netskope**, não uma CA já listada em
+`/etc/pki/trust/anchors/`. A intermediária e a raiz precisam ser extraídas
+diretamente da chain.
+
+### 11.5 Extração e uso das CAs Netskope
+
+```bash
+openssl s_client -connect packages.microsoft.com:443 -showcerts </dev/null | \
+  awk '/BEGIN CERT/,/END CERT/' > /tmp/chain.pem
+awk '/-----BEGIN CERTIFICATE-----/{n++} n>1{print > ("/tmp/cert_" n ".pem")}' /tmp/chain.pem
+cp /tmp/cert_2.pem .devcontainer/certs/netskope-intermediate-bbts.pem
+cp /tmp/cert_3.pem .devcontainer/certs/netskope-root-ca.pem
+```
+
+Além das duas CAs Netskope, também foram copiadas ~80 CAs BBTS de
+`/etc/pki/trust/anchors/BBcerts_*.pem` (por segurança, caso algum endpoint
+use chain BBTS direta).
+
+### 11.6 Estrutura final do `.devcontainer/`
+
+```
+.devcontainer/
+├── devcontainer.json   # spec principal
+├── Dockerfile          # base + install CAs
+├── certs/              # CAs (NÃO versionadas)
+│   └── .gitignore      # bloqueia tudo
+└── README.md           # instruções + script para popular certs
+```
+
+Detalhes técnicos:
+- Base: `mcr.microsoft.com/devcontainers/java:1-21-bookworm` (Java 21.0.8
+  Microsoft OpenJDK + Maven já bundled).
+- Feature: `docker-in-docker:2` (isola daemon do host).
+- Dockerfile roda `update-ca-certificates` **e** `keytool -importcert`
+  para o `cacerts` do JDK.
+- `certs/` versionado apenas como `.gitignore` que bloqueia todo o conteúdo.
+
+Registrado em **ADR-0009**.
+
+### 11.7 Validação final no devcontainer
+
+```
+NODE_EXTRA_CA_CERTS=/etc/ssl/ca-bundle.pem devcontainer up --workspace-folder .
+→ Container started, remoteUser: vscode
+
+devcontainer exec ... ./mvnw -B -ntp clean verify
+→ [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+→ [INFO] BUILD SUCCESS
+→ target/spring-boot-template-0.0.1-SNAPSHOT.jar
+
+Postgres container observado nos logs de teste:
+  jdbc:postgresql://172.18.0.1:32768/test
+  Database version: 18.4
+```
+
+O DinD roda o Postgres **dentro** do próprio devcontainer, sem tocar no
+daemon do host. Ryuk permanece desabilitado pelo `pom.xml` (ADR-0008)
+mesmo com `containerEnv: TESTCONTAINERS_RYUK_DISABLED=false` no
+`devcontainer.json` — o `<environmentVariables>` do surefire tem
+precedência, o que é o comportamento desejado (consistência entre
+ambientes).
+
 ## Estatísticas da sessão
 
-- Iterações necessárias para `./mvnw test` verde: **4** (após scaffold).
+- Iterações necessárias para `./mvnw test` verde no host: **4** (após scaffold).
+- Iterações necessárias para `devcontainer up` verde: **4** (CA node, CA container,
+  feature java falhou, feature dind precisou de CA Netskope).
 - Correções permanentes aplicadas ao `pom.xml`: **2**
   - Versão do parent (`4.1.0.RELEASE` → `4.1.0`).
   - Surefire com Ryuk desabilitado.
-- Arquivos adicionados aos gerados pelo Initializr: **3**
+- Arquivos adicionados aos gerados pelo Initializr: **6**
   - `.github/copilot-instructions.md`
   - `src/test/resources/testcontainers.properties`
+  - `.devcontainer/devcontainer.json`
+  - `.devcontainer/Dockerfile`
+  - `.devcontainer/certs/.gitignore`
+  - `.devcontainer/README.md`
   - `docs/` (esta pasta inteira).
 - Nenhum código de aplicação foi escrito além do que o Initializr gera — este
   é intencionalmente um template, não uma amostra funcional.

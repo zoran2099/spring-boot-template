@@ -1,0 +1,5 @@
+# Ignore all cert files — they are copied at container-build time from
+# the host's /etc/pki/trust/anchors/ and must not be committed
+# (see .devcontainer/README.md).
+*
+!.gitignore

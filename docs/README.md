@@ -28,6 +28,7 @@ for clonado ou forkado para novos projetos.
 | [0006](adr/0006-awesome-copilot-plugins.md) | Baseline de plugins do `awesome-copilot` marketplace | Accepted |
 | [0007](adr/0007-boot-version-patch.md) | Patch da versão do Spring Boot: `4.1.0.RELEASE` → `4.1.0` | Accepted |
 | [0008](adr/0008-testcontainers-ryuk-disabled.md) | Desabilitar Testcontainers Ryuk no Surefire | Accepted |
+| [0009](adr/0009-devcontainer.md) | Dev Container com Docker-in-Docker e CAs corporativas | Accepted |
 
 ## Quando forkar/clonar este template
 
@@ -36,5 +37,9 @@ for clonado ou forkado para novos projetos.
    novo projeto — os ADRs 0001 e 0005 documentam os pontos que exigem atualização
    coordenada (raiz de component-scan, referências em testes, `.github/copilot-instructions.md`).
 3. Rode `copilot plugin list` e instale o baseline do ADR 0006.
-4. Se qualquer decisão for revertida no projeto derivado, adicione um novo ADR
+4. Popule `.devcontainer/certs/` seguindo `.devcontainer/README.md` (ADR 0009) —
+   os certificados corporativos **não são versionados**.
+5. Suba o devcontainer (`devcontainer up --workspace-folder .`) e valide com
+   `./mvnw clean verify` **dentro** dele antes do primeiro commit.
+6. Se qualquer decisão for revertida no projeto derivado, adicione um novo ADR
    com status `Supersedes ADR-XXXX` em vez de editar o ADR original.

@@ -196,8 +196,41 @@ Ao clonar este template para um projeto novo:
 - [ ] `./mvnw spring-boot:test-run` → app sobe em `localhost:8080`
 - [ ] `curl localhost:8080/actuator/health` → `{"status":"UP"}`
 - [ ] `.github/copilot-instructions.md` presente
-- [ ] `docs/adr/*.md` presentes (8 arquivos)
+- [ ] `docs/adr/*.md` presentes (9 arquivos)
 - [ ] `copilot plugin list` → 5 plugins do baseline
 
 Se qualquer item falhar, consulte a seção correspondente do
 `session-log.md` ou o ADR indicado.
+
+## Alternativa: Dev Container (recomendado para ambiente corporativo)
+
+Para ambientes com proxy TLS-inspecting (Netskope/Zscaler/Bluecoat), a
+alternativa reprodutível é subir tudo dentro de um **Dev Container** — o
+template inclui `.devcontainer/` completo (ver **ADR-0009**).
+
+Passos:
+
+```bash
+# 1. Instalar CLI (uma vez por máquina)
+npm install -g @devcontainers/cli
+
+# 2. Popular certs corporativas (ver .devcontainer/README.md)
+cd .devcontainer/certs
+cp /etc/pki/trust/anchors/BBcerts_*.pem . 2>/dev/null || true
+openssl s_client -connect packages.microsoft.com:443 -showcerts </dev/null 2>/dev/null | \
+  awk '/BEGIN CERT/,/END CERT/' > /tmp/chain.pem
+awk '/-----BEGIN CERTIFICATE-----/{n++} n>1{print > ("/tmp/cert_" n ".pem")}' /tmp/chain.pem
+cp /tmp/cert_2.pem netskope-intermediate-bbts.pem
+cp /tmp/cert_3.pem netskope-root-ca.pem
+cd ../..
+
+# 3. Subir o devcontainer
+NODE_EXTRA_CA_CERTS=/etc/ssl/ca-bundle.pem devcontainer up --workspace-folder .
+
+# 4. Rodar tudo dentro dele
+NODE_EXTRA_CA_CERTS=/etc/ssl/ca-bundle.pem \
+  devcontainer exec --workspace-folder . ./mvnw -B -ntp clean verify
+```
+
+Ou no VS Code: "Dev Containers: Reopen in Container" com a extensão
+`ms-vscode-remote.remote-containers` instalada.

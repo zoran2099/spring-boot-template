@@ -1,0 +1,54 @@
+{
+  "name": "spring-boot-template (Java 21 + Docker-in-Docker)",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "args": {
+      "BASE_IMAGE": "mcr.microsoft.com/devcontainers/java:1-21-bookworm"
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/docker-in-docker:2"
+  ],
+
+  "containerEnv": {
+    "TESTCONTAINERS_RYUK_DISABLED": "false"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "redhat.vscode-xml",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "maven.executable.preferMavenWrapper": true
+      }
+    }
+  },
+
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Spring Boot HTTP",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "postCreateCommand": "./mvnw -B -ntp -q dependency:go-offline || true",
+
+  "remoteUser": "vscode"
+}
