@@ -1,13 +1,13 @@
 # `.devcontainer/` — ambiente isolado e reprodutível
 
 Este diretório provê um **VS Code Dev Container** (spec `devcontainers.json`) que
-isola o toolchain de desenvolvimento em um container Debian com Java 21, Maven
+isola o toolchain de desenvolvimento em um container Debian com Eclipse Temurin 25, Maven
 Wrapper, Docker-in-Docker e as CAs corporativas necessárias para o proxy
 Netskope/BBTS.
 
 ## Por que existe
 
-- Padroniza a versão de Java (21.0.8 LTS via Microsoft OpenJDK) e Maven em
+- Padroniza a versão de Java (25 via Eclipse Temurin) e Maven em
   qualquer máquina, independentemente do que está instalado no host.
 - Isola o daemon Docker usado por Testcontainers via **Docker-in-Docker**:
   o build de teste não polui/depende do daemon do host (Docker Desktop,
@@ -21,6 +21,7 @@ Netskope/BBTS.
 .devcontainer/
 ├── devcontainer.json    # spec principal (features, extensões, env)
 ├── Dockerfile           # base image + instalação das CAs corporativas
+├── post-create.sh       # importa as CAs no Temurin e aquece o cache Maven
 ├── certs/               # CAs (NÃO versionadas — ver certs/.gitignore)
 │   └── .gitignore
 └── README.md            # este arquivo
@@ -107,8 +108,8 @@ Verificado nesta sessão:
 ### Negativos / atenção
 
 - **Primeiro build é lento** (~3–5 min) — pull da imagem base
-  `mcr.microsoft.com/devcontainers/java:1-21-bookworm` (~1 GB), instalação
-  do feature docker-in-docker, import das CAs no `cacerts`.
+  `mcr.microsoft.com/devcontainers/java:1-25-bookworm` (~1 GB), instalação
+  dos features Temurin e docker-in-docker, import das CAs no `cacerts`.
 - Requer `--privileged` (habilitado por default pelo feature DinD).
   Aceitar essa flag em CI/enterprise pode exigir aprovação de segurança.
 - Docker-in-Docker consome mais recursos: dois níveis de daemon, imagens

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM maven:3.9-eclipse-temurin-21 AS dependencies
+FROM maven:3.9-eclipse-temurin-25 AS dependencies
 
 WORKDIR /workspace
 COPY .mvn/ .mvn/
@@ -10,7 +10,7 @@ FROM dependencies AS build
 COPY src/ src/
 RUN ./mvnw -B -ntp -DskipTests package
 
-FROM eclipse-temurin:21-jre AS runtime
+FROM eclipse-temurin:25-jre AS runtime
 
 RUN groupadd --system catalog \
 	&& useradd --system --gid catalog --home-dir /app --shell /usr/sbin/nologin catalog

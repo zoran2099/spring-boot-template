@@ -1,6 +1,6 @@
 # Copilot instructions for `catalog-api`
 
-Java 21 / Spring Boot 4.1 / Maven application. Base package:
+Java 25 / Spring Boot 4.1 / Maven application. Base package:
 `br.com.bbts.catalog`.
 
 ## Architecture invariants

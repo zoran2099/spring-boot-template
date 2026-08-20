@@ -1,15 +1,21 @@
 {
-  "name": "catalog-api (Java 21 + Docker-in-Docker)",
+  "name": "catalog-api (Java 25 + Docker-in-Docker)",
 
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".",
     "args": {
-      "BASE_IMAGE": "mcr.microsoft.com/devcontainers/java:1-21-bookworm"
+      "BASE_IMAGE": "mcr.microsoft.com/devcontainers/java:1-25-bookworm"
     }
   },
 
   "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "25",
+      "jdkDistro": "tem",
+      "installMaven": false,
+      "installGradle": false
+    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest",
       "dockerDashComposeVersion": "v2"
@@ -17,6 +23,7 @@
   },
 
   "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/java:1",
     "ghcr.io/devcontainers/features/docker-in-docker:2"
   ],
 
@@ -48,7 +55,7 @@
     }
   },
 
-  "postCreateCommand": "./mvnw -B -ntp -q dependency:go-offline || true",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
 
   "remoteUser": "vscode"
 }

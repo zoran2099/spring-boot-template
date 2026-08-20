@@ -1,6 +1,6 @@
 # catalog-api
 
-API de referência de catálogo, somente leitura, construída com Java 21,
+API de referência de catálogo, somente leitura, construída com Java 25,
 Spring Boot 4.1, Spring Data REST, Spring Security e PostgreSQL.
 
 ## Pré-requisitos
@@ -8,7 +8,7 @@ Spring Boot 4.1, Spring Data REST, Spring Security e PostgreSQL.
 Para desenvolver e validar o projeto localmente, instale:
 
 - Git;
-- Java Development Kit (JDK) 21;
+- Eclipse Temurin JDK 25;
 - Docker com o comando `docker compose` disponível.
 
 Não é necessário instalar Maven nem PostgreSQL. O Maven Wrapper (`./mvnw`)
@@ -22,6 +22,12 @@ java -version
 docker version
 docker compose version
 ./mvnw -version
+```
+
+Com `mise`, instale globalmente a distribuição e a versão usadas pelo projeto:
+
+```bash
+mise use --global java@temurin-25
 ```
 
 O daemon do Docker precisa estar em execução tanto para o Compose quanto para
@@ -222,7 +228,7 @@ perfil `prod` exige que o schema já exista e seja compatível.
 docker build -t catalog-api:local .
 ```
 
-A imagem final executa com Java 21, usa usuário não-root e espera que todas as
+A imagem final executa com Eclipse Temurin 25, usa usuário não-root e espera que todas as
 variáveis de banco e segurança sejam fornecidas na inicialização.
 
 ## Testes
@@ -328,7 +334,7 @@ falhará por design.
 
 Confirme se `docker version` exibe informações do cliente e do servidor. Em
 Linux, confirme também se o usuário atual possui acesso ao socket do Docker. O
-devcontainer do repositório oferece Java 21 e Docker-in-Docker para esse fluxo.
+devcontainer do repositório oferece Eclipse Temurin 25 e Docker-in-Docker para esse fluxo.
 
 ### O Compose informa que uma variável é obrigatória
 
