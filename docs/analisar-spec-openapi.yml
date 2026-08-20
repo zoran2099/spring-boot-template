@@ -1,0 +1,358 @@
+openapi: 3.0.3
+
+info:
+  title: API de Eventos de ATM/TAA
+  description: |
+    API para consulta de eventos de equipamentos de autoatendimento (TAA/ATM),
+    destinada ao enriquecimento de chamados de manutenção da BBTS.
+
+    Esta API disponibiliza informações de:
+    - Eventos e ocorrências dos equipamentos;
+    - Histórico de ocorrências;
+    - Status de retorno à operação;
+    - Dados cadastrais dos equipamentos (opcional).
+
+    A API possui acesso somente leitura.
+  version: 1.0.0
+
+servers:
+  - url: https://api-hml.exemplo.com/v1
+    description: Homologação
+  - url: https://api.exemplo.com/v1
+    description: Produção
+
+security:
+  - clientCredentials: []
+
+tags:
+  - name: Equipamentos
+  - name: Eventos
+
+paths:
+
+  /equipamentos:
+    get:
+      tags:
+        - Equipamentos
+      summary: Consultar equipamentos
+      description: Retorna equipamentos sob responsabilidade da BBTS.
+      parameters:
+        - name: codigo
+          in: query
+          schema:
+            type: string
+        - name: modelo
+          in: query
+          schema:
+            type: string
+        - name: pagina
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: tamanhoPagina
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Lista de equipamentos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedEquipamentos"
+
+  /equipamentos/{equipamentoId}:
+    get:
+      tags:
+        - Equipamentos
+      summary: Consultar equipamento por identificador
+      parameters:
+        - name: equipamentoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Equipamento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipamento"
+        "404":
+          description: Equipamento não encontrado
+
+  /eventos:
+    get:
+      tags:
+        - Eventos
+      summary: Consultar eventos
+      description: Retorna eventos e ocorrências dos equipamentos.
+      parameters:
+        - name: equipamentoId
+          in: query
+          schema:
+            type: string
+
+        - name: dataInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+
+        - name: dataFim
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+
+        - name: gravidade
+          in: query
+          schema:
+            $ref: "#/components/schemas/Gravidade"
+
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - ABERTO
+              - ENCERRADO
+
+        - name: pagina
+          in: query
+          schema:
+            type: integer
+            default: 1
+
+        - name: tamanhoPagina
+          in: query
+          schema:
+            type: integer
+            default: 100
+
+      responses:
+        "200":
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedEventos"
+
+  /eventos/{eventoId}:
+    get:
+      tags:
+        - Eventos
+      summary: Consultar evento por identificador
+      parameters:
+        - name: eventoId
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Evento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evento"
+
+        "404":
+          description: Evento não encontrado
+
+  /equipamentos/{equipamentoId}/eventos:
+    get:
+      tags:
+        - Eventos
+      summary: Consultar histórico de eventos de um equipamento
+      description: Retorna histórico de ocorrências para análise de recorrência.
+      parameters:
+        - name: equipamentoId
+          in: path
+          required: true
+          schema:
+            type: string
+
+        - name: quantidade
+          in: query
+          schema:
+            type: integer
+            default: 50
+
+      responses:
+        "200":
+          description: Histórico retornado com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evento"
+
+  /equipamentos/{equipamentoId}/status:
+    get:
+      tags:
+        - Equipamentos
+      summary: Consultar status operacional atual
+      description: Indica se o equipamento está disponível ou indisponível.
+      parameters:
+        - name: equipamentoId
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Status atual
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusEquipamento"
+
+components:
+
+  securitySchemes:
+    clientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.exemplo.com/oauth2/token
+          scopes:
+            eventos.read: Consulta de eventos
+            equipamentos.read: Consulta de equipamentos
+
+  schemas:
+
+    Gravidade:
+      type: string
+      enum:
+        - BAIXA
+        - MEDIA
+        - ALTA
+        - CRITICA
+
+    Equipamento:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ATM000123
+
+        identificador:
+          type: string
+          example: ATM000123
+
+        modelo:
+          type: string
+          example: Diebold DN Series
+
+        localizacao:
+          type: string
+          example: Agência Brasília Centro
+
+    Evento:
+      type: object
+      required:
+        - id
+        - equipamentoId
+        - codigoErro
+        - descricaoErro
+        - dataIndisponibilidade
+
+      properties:
+
+        id:
+          type: string
+          example: EVT-987654
+
+        equipamentoId:
+          type: string
+          example: ATM000123
+
+        codigoErro:
+          type: string
+          example: E1045
+
+        descricaoErro:
+          type: string
+          example: Falha no módulo dispensador
+
+        gravidade:
+          $ref: "#/components/schemas/Gravidade"
+
+        dataIndisponibilidade:
+          type: string
+          format: date-time
+          example: "2026-02-17T10:15:00Z"
+
+        dataRetornoOperacao:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-02-17T10:35:00Z"
+
+        autocorrecao:
+          type: boolean
+          description: Indica se o equipamento voltou a operar sem intervenção.
+
+        status:
+          type: string
+          enum:
+            - ABERTO
+            - ENCERRADO
+
+    StatusEquipamento:
+      type: object
+      properties:
+        equipamentoId:
+          type: string
+
+        status:
+          type: string
+          enum:
+            - OPERACIONAL
+            - INDISPONIVEL
+
+        ultimoEvento:
+          $ref: "#/components/schemas/Evento"
+
+    PagedEquipamentos:
+      type: object
+      properties:
+        pagina:
+          type: integer
+
+        tamanhoPagina:
+          type: integer
+
+        totalRegistros:
+          type: integer
+
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipamento"
+
+    PagedEventos:
+      type: object
+      properties:
+        pagina:
+          type: integer
+
+        tamanhoPagina:
+          type: integer
+
+        totalRegistros:
+          type: integer
+
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evento"

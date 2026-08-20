@@ -1,8 +1,8 @@
-# Documentação do template `spring-boot-template`
+# Documentação do `catalog-api`
 
-Esta pasta registra **todas** as decisões arquiteturais e de configuração feitas
-durante a criação deste template, para servir de base de revisão quando o repositório
-for clonado ou forkado para novos projetos.
+Esta pasta preserva as decisões arquiteturais do template de origem e registra a
+evolução do projeto derivado `catalog-api`. Os ADRs 0001–0009 são históricos; o
+ADR 0010 representa a arquitetura atual da API.
 
 ## Como ler este diretório
 
@@ -29,17 +29,12 @@ for clonado ou forkado para novos projetos.
 | [0007](adr/0007-boot-version-patch.md) | Patch da versão do Spring Boot: `4.1.0.RELEASE` → `4.1.0` | Accepted |
 | [0008](adr/0008-testcontainers-ryuk-disabled.md) | Desabilitar Testcontainers Ryuk no Surefire | Accepted |
 | [0009](adr/0009-devcontainer.md) | Dev Container com Docker-in-Docker e CAs corporativas | Accepted |
+| [0010](adr/0010-catalog-read-only-api.md) | API de catálogo somente leitura com Data REST | Accepted |
 
-## Quando forkar/clonar este template
+## Origem do projeto
 
-1. Leia todos os ADRs em ordem.
-2. Renomeie o `groupId`/`artifactId`/pacote base (`com.example.template`) para o do
-   novo projeto — os ADRs 0001 e 0005 documentam os pontos que exigem atualização
-   coordenada (raiz de component-scan, referências em testes, `.github/copilot-instructions.md`).
-3. Rode `copilot plugin list` e instale o baseline do ADR 0006.
-4. Popule `.devcontainer/certs/` seguindo `.devcontainer/README.md` (ADR 0009) —
-   os certificados corporativos **não são versionados**.
-5. Suba o devcontainer (`devcontainer up --workspace-folder .`) e valide com
-   `./mvnw clean verify` **dentro** dele antes do primeiro commit.
-6. Se qualquer decisão for revertida no projeto derivado, adicione um novo ADR
-   com status `Supersedes ADR-XXXX` em vez de editar o ADR original.
+1. Leia os ADRs 0001–0009 para entender as decisões herdadas do template.
+2. Leia o ADR 0010 para entender quais decisões foram substituídas no projeto atual.
+3. Popule `.devcontainer/certs/` seguindo `.devcontainer/README.md` (ADR 0009),
+   pois certificados corporativos não são versionados.
+4. Registre mudanças arquiteturais futuras em novos ADRs, sem reescrever o histórico.

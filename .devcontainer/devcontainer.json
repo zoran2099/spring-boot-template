@@ -1,5 +1,5 @@
 {
-  "name": "spring-boot-template (Java 21 + Docker-in-Docker)",
+  "name": "catalog-api (Java 21 + Docker-in-Docker)",
 
   "build": {
     "dockerfile": "Dockerfile",

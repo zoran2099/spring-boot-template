@@ -1,0 +1,9 @@
+.git
+.github
+.devcontainer
+.idea
+.vscode
+docs
+target
+.env
+*.iml
