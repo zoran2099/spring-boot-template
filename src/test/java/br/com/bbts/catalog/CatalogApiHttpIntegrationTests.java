@@ -2,7 +2,9 @@ package br.com.bbts.catalog;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
@@ -31,10 +34,12 @@ import org.springframework.test.web.servlet.MockMvc;
 		"app.security.reader.username=reader",
 		"app.security.reader.password=reader-password",
 		"app.security.admin.username=admin",
-		"app.security.admin.password=admin-password"
+		"app.security.admin.password=admin-password",
+		"app.cors.allowed-origins=http://frontend.example"
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class CatalogApiHttpIntegrationTests {
+	private static final String ALLOWED_ORIGIN = "http://frontend.example";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -65,6 +70,32 @@ class CatalogApiHttpIntegrationTests {
 	void requiresAuthenticationForCatalog() throws Exception {
 		mockMvc.perform(get("/api/v1/products"))
 				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void allowsCorsPreflightAndAuthenticatedRequestForConfiguredOrigin() throws Exception {
+		mockMvc.perform(options("/api/v1/products")
+					.header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN)
+					.header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+					.header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "authorization"))
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED_ORIGIN))
+				.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
+
+		mockMvc.perform(get("/api/v1/products")
+					.header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN)
+					.with(httpBasic("reader", "reader-password")))
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED_ORIGIN));
+	}
+
+	@Test
+	void rejectsCorsPreflightForUnconfiguredOrigin() throws Exception {
+		mockMvc.perform(options("/api/v1/products")
+					.header(HttpHeaders.ORIGIN, "https://untrusted.example")
+					.header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+				.andExpect(status().isForbidden())
+				.andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
 	}
 
 	@Test

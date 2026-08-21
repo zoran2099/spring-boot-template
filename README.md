@@ -54,6 +54,7 @@ Edite `.env` e substitua todos os valores de exemplo:
 | `READER_PASSWORD` | Sim | Senha do usuário `READER`. |
 | `ADMIN_USERNAME` | Sim | Usuário Basic Auth administrativo. |
 | `ADMIN_PASSWORD` | Sim | Senha do usuário `ADMIN`. |
+| `CORS_ALLOWED_ORIGINS` | Não | Origens web autorizadas, separadas por vírgula; padrão local: `http://localhost:3000`. |
 
 O arquivo `.env` é ignorado pelo Git e não deve ser versionado. Não reutilize
 as credenciais de exemplo fora de um ambiente local.
@@ -71,6 +72,7 @@ Ao executar a aplicação diretamente, use os nomes abaixo:
 | `APP_SECURITY_READER_PASSWORD` | senha do leitor |
 | `APP_SECURITY_ADMIN_USERNAME` | `admin` |
 | `APP_SECURITY_ADMIN_PASSWORD` | senha do administrador |
+| `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:3000` |
 
 As configurações de banco e segurança não possuem credenciais padrão. A
 aplicação falha na inicialização quando uma delas está ausente.
@@ -317,6 +319,11 @@ curl -u '<admin-username>:<admin-password>' \
 Basic Auth é a solução desta versão. Microsoft Entra ID será introduzido por
 uma decisão arquitetural posterior. HTTPS deve terminar no ingress, gateway ou
 proxy reverso; o perfil `prod` respeita os headers encaminhados por essa camada.
+
+O CORS é aplicado somente a `/api/v1/**`, aceita `GET`, `HEAD` e `OPTIONS` e
+permite os cabeçalhos `Authorization`, `Accept` e `Content-Type`. Configure
+origens exatas, sem caminho ou barra final; não use `*`, pois a API aceita
+credenciais. No perfil `local`, a origem padrão é `http://localhost:3000`.
 
 ## Perfis
 
